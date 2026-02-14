@@ -1,0 +1,14 @@
+{
+  "name": "@jerry_aurora/sky-monitor-sdk",
+  "version": "0.0.0-local",
+  "private": true,
+  "type": "module",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    }
+  }
+}
