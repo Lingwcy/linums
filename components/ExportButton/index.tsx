@@ -8,7 +8,7 @@
 
 import { useState } from 'react'
 import { Download } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button } from 'haiku-react-ui'
 import { useToast } from '@/lib/hooks/use-toast'
 
 interface ExportButtonProps {
@@ -71,7 +71,7 @@ export function ExportButton({ conversationId, className }: ExportButtonProps) {
 
   return (
     <Button
-      variant="outline"
+      variant="link"
       size="sm"
       className={className}
       disabled={isExporting}

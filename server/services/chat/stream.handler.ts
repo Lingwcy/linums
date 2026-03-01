@@ -392,6 +392,7 @@ function appendToolCallChunk(
   chunks: ToolCallChunk[],
   toolCallDelta: ToolCallDelta
 ): ToolCallChunk {
+  console.log(`[tool-chunk]: ${JSON.stringify(toolCallDelta,null,2)}`)
   const index = typeof toolCallDelta?.index === 'number' ? toolCallDelta.index : 0
   if (!chunks[index]) {
     chunks[index] = { index }

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { useParams } from 'next/navigation'
 import { Bolt, UserCircle2, LogOut, Palette } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+// import { Button } from '@/components/ui/button'
 import { ModelSelector } from '@/features/chat/components/ModelSelector'
 import { useChatStore } from '@/features/chat/store/chat.store'
 import { useSession, signOut } from 'next-auth/react'
@@ -12,6 +12,7 @@ import { useTheme } from 'next-themes'
 import { StorageManager } from '@/lib/utils/storage'
 import { ShareButton } from '@/features/share/components/ShareButton'
 import { ExportButton } from '@/components/ExportButton'
+import { Button } from 'haiku-react-ui'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,11 +23,11 @@ import {
 } from '@/components/ui/dropdown-menu'
 import SettingDialog from '../../features/setting'
 
-export function 
-Header() {
+export function
+  Header() {
   const params = useParams()
   const conversationId = params.conversationId as string | undefined
-  const [settingDialogOpen,setSettingDialogOpen] = useState<boolean>(false)
+  const [settingDialogOpen, setSettingDialogOpen] = useState<boolean>(false)
   const selectedModel = useChatStore((s) => s.selectedModel)
   const setModel = useChatStore((s) => s.setModel)
   const reset = useChatStore((s) => s.reset)
@@ -76,8 +77,8 @@ Header() {
 
         {/* 关于按钮 */}
         <Button
-          variant="ghost"
-          size="icon"
+          variant="default"
+          size="sm"
           onClick={() => setSettingDialogOpen(true)}
           className="h-9 w-9 rounded-lg hover:bg-[hsl(var(--sidebar-hover))]"
           title="设置"
@@ -89,14 +90,14 @@ Header() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
-              variant="ghost"
-              size="icon"
+              variant="default"
+              size="sm"
               className="h-9 w-9 rounded-full hover:bg-[hsl(var(--sidebar-hover))] p-0 overflow-hidden"
             >
               {session?.user?.image ? (
-                <Image 
-                  src={session.user.image} 
-                  alt={session.user.name || '用户'} 
+                <Image
+                  src={session.user.image}
+                  alt={session.user.name || '用户'}
                   width={36}
                   height={36}
                   className="rounded-full object-cover"
@@ -120,9 +121,9 @@ Header() {
                 )}
               </div>
             </DropdownMenuLabel>
-            
+
             <DropdownMenuSeparator />
-            
+
             {/* 主题切换 */}
             <DropdownMenuItem onClick={cycleTheme} className="cursor-pointer">
               <Palette className="mr-2 h-4 w-4" />
@@ -130,11 +131,11 @@ Header() {
                 主题: {theme === 'light' ? '浅色' : theme === 'dark' ? '深色' : '跟随系统'}
               </span>
             </DropdownMenuItem>
-            
+
             <DropdownMenuSeparator />
-            
+
             {/* 退出登录 */}
-            <DropdownMenuItem 
+            <DropdownMenuItem
               onClick={handleLogout}
               className="cursor-pointer text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
             >
@@ -145,7 +146,7 @@ Header() {
         </DropdownMenu>
       </div>
 
-      <SettingDialog open = {settingDialogOpen} setOpen={setSettingDialogOpen}/>
+      <SettingDialog open={settingDialogOpen} setOpen={setSettingDialogOpen} />
     </header>
   )
 }

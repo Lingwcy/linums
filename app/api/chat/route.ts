@@ -1,6 +1,6 @@
 /**
  * Chat API Route
- * 
+ *
  * 路由层：只负责请求校验和响应格式
  * 业务逻辑委托给 ChatService
  */
@@ -9,6 +9,14 @@ import { getCurrentUserId } from '@/server/auth/utils'
 import { UserRepository } from '@/server/repositories/user.repository'
 import { handleChatRequest, NotFoundError } from '@/server/services/chat'
 import type { ProviderId } from '@/server/services/ai/gateway'
+
+// 供应商对应的环境变量 key
+const PROVIDER_ENV_KEYS: Record<ProviderId, string | undefined> = {
+  openrouter: process.env.OPENROUTER_API_KEY,
+  bigmodel: process.env.BIGMODEL_API_KEY || process.env.ZHIPU_API_KEY,
+  siliconflow: process.env.SILICONFLOW_API_KEY,
+  openai: process.env.OPENAI_API_KEY,
+}
 
 export async function POST(req: Request) {
   // 1. 认证校验
@@ -19,32 +27,28 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // 2. 获取用户和 API Key
-  const user = await UserRepository.findById(userId)
-  if (!user) {
-    return Response.json({ error: 'User not found' }, { status: 404 })
-  }
-
-  // 3. 解析请求体
+  // 2. 解析请求体
   const body = await req.json()
   if (!body.content?.trim()) {
     return Response.json({ error: 'Message is required' }, { status: 400 })
   }
 
-  const providerId = (body.providerId as ProviderId | undefined) ?? undefined
+  const providerId = (body.providerId as ProviderId | undefined) ?? 'siliconflow'
 
-  // 4. 根据 provider 选择 key（尽量保持兼容：优先 user.apiKey，再走 env fallback）
-  const apiKey =
-    user.apiKey ||
-    (providerId === 'openrouter'
-      ? process.env.OPENROUTER_API_KEY
-      : providerId === 'bigmodel'
-        ? process.env.BIGMODEL_API_KEY || process.env.ZHIPU_API_KEY
-        : process.env.SILICONFLOW_API_KEY || process.env.OPENAI_API_KEY)
+  // 3. 获取用户的 API Key（优先从数据库获取用户配置的 key）
+  const userApiKey = await UserRepository.getProviderApiKey(userId, providerId)
+
+  // 4. 根据 provider 选择 key
+  // 优先使用用户配置的 API Key，如果没有配置则尝试使用环境变量（向后兼容）
+  const apiKey = userApiKey || PROVIDER_ENV_KEYS[providerId]
 
   if (!apiKey) {
     return Response.json(
-      { error: '密钥没有配置，请先在设置配置此供应商需要的密钥！' },
+      {
+        error: `您尚未配置 ${providerId} 供应商的 API Key，请先在设置中配置后再使用。`,
+        code: 'API_KEY_NOT_CONFIGURED',
+        providerId,
+      },
       { status: 400 }
     )
   }

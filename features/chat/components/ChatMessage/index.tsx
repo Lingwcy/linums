@@ -49,7 +49,7 @@ export function ChatMessage({ messageId }: ChatMessageProps) {
     : undefined
 
   const handleCancelTool = isAIMessage
-    ? (toolCallId: string) => ChatService.cancelTool(messageId, toolCallId)
+    ? (toolCallId: string) => ChatService.requestCancelTool(messageId, toolCallId)
     : undefined
 
   return (

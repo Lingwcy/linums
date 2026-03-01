@@ -13,7 +13,7 @@ import { MessageContent } from '@/features/chat/components/MessageContent'
 import { MessageActions } from '@/features/chat/components/MessageActions'
 import { MessageEdit } from '@/features/chat/components/MessageEdit'
 import { Button } from '@/components/ui/button'
-import { Loader2, Edit2, RotateCw, ChevronDown, ChevronRight, Globe, XCircle } from 'lucide-react'
+import { Loader2,CircleOff, Edit2, RotateCw, ChevronDown, ChevronRight, Globe, XCircle } from 'lucide-react'
 import { MarkdownIcon } from '@/components/icons/MarkdownIcon'
 import { TextFileIcon } from '@/components/icons/TextFileIcon'
 import { cn } from '@/lib/utils'
@@ -52,7 +52,7 @@ function WebSearchStatus({ invocation }: { invocation: ToolInvocation }) {
 
   // 完成 - 显示来源标签
   const hasSources = sources && sources.length > 0
-  
+
   return (
     <div className="space-y-2">
       {/* 来源标签行 */}
@@ -95,11 +95,11 @@ function WebSearchStatus({ invocation }: { invocation: ToolInvocation }) {
  * 渲染单个工具调用
  * 图片生成完成后会直接插入到 content 流中，这里只显示 loading 状态
  */
-function ToolInvocationItem({ 
-  invocation, 
+function ToolInvocationItem({
+  invocation,
   _messageId,
-  onCancel 
-}: { 
+  onCancel
+}: {
   invocation: ToolInvocation
   _messageId?: string
   onCancel?: (toolCallId: string) => void
@@ -109,7 +109,7 @@ function ToolInvocationItem({
     if (invocation.state === 'running' || invocation.state === 'pending') {
       const progress = (invocation as { progress?: number }).progress ?? 0
       const estimatedTime = (invocation as { estimatedTime?: number }).estimatedTime
-      
+
       return (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -135,7 +135,7 @@ function ToolInvocationItem({
           {/* 进度条 */}
           {progress > 0 && (
             <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
-              <div 
+              <div
                 className="h-full bg-primary transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
@@ -219,32 +219,32 @@ function ToolResultItem({ result }: { result: ToolResult }) {
       </div>
     )
   }
-  
+
   return null
 }
 
 interface ChatMessageUIProps {
   /** 消息数据 */
   message: Message
-  
+
   /** 消息 ID */
   messageId: string
-  
+
   /** 消息阶段（状态机） */
   phase: MessagePhase
-  
+
   /** 是否正在处理 */
   isProcessing: boolean
-  
+
   /** 是否正在等待响应 */
   isWaitingForResponse: boolean
-  
+
   /** 重试回调 */
   onRetry?: () => void
-  
+
   /** 编辑并重新发送回调 */
   onEdit?: (newContent: string) => void
-  
+
   /** 取消工具执行回调 */
   onCancelTool?: (toolCallId: string) => void
 }
@@ -271,7 +271,7 @@ export function ChatMessageUI({
   // 根据状态机计算显示状态
   const isStreaming = isProcessing
   const isStreamingAnswer = phase === 'answering'
-  
+
   // ============ 用户消息 ============
   if (isUser) {
     return (
@@ -351,7 +351,7 @@ export function ChatMessageUI({
       </div>
     )
   }
-  
+
   // ============ AI 消息 ============
 
   // 根据 displayState 决定显示内容
@@ -360,77 +360,80 @@ export function ChatMessageUI({
 
   return (
     <div className="w-full py-6">
-        <div className="space-y-4">
-          {/* Waiting 状态：等待响应 */}
-          {showWaitingIndicator && (
-            <div className="flex items-center gap-2 text-[hsl(var(--text-secondary))]">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="text-sm">等待响应...</span>
-            </div>
-          )}
+      <div className="space-y-4">
+        {/* Waiting 状态：等待响应 */}
+        {showWaitingIndicator && (
+          <div className="flex items-center gap-2 text-[hsl(var(--text-secondary))]">
+            {
+              showErrorIndicator ?
+                <div className="flex items-center gap-2 text-red-500">
+                  <CircleOff className="h-4 w-4" />
+                  <span className="text-sm">生成失败</span>
+                </div> :
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm">等待响应...</span>
+                </>
+            }
+          </div>
+        )}
 
-          {/* Error 状态：显示错误提示 */}
-          {showErrorIndicator && (
-            <div className="flex items-center gap-2 text-red-500">
-              <span className="text-sm">生成失败</span>
-            </div>
-          )}
 
-          {/* 工具调用状态（运行时，支持多个并行） */}
-          {message.toolInvocations?.map((invocation) => (
-            <ToolInvocationItem 
-              key={invocation.toolCallId} 
-              invocation={invocation}
-              _messageId={messageId}
-              onCancel={onCancelTool}
-            /> 
-          ))}
+        {/* 工具调用状态（运行时，支持多个并行） */}
+        {message.toolInvocations?.map((invocation) => (
+          <ToolInvocationItem
+            key={invocation.toolCallId}
+            invocation={invocation}
+            _messageId={messageId}
+            onCancel={onCancelTool}
+          />
+        ))}
 
-          {/* 工具执行结果（持久化后，从数据库加载） */}
-          {!message.toolInvocations?.length && message.toolResults?.map((result) => (
-            <ToolResultItem key={result.toolCallId} result={result} />
-          ))}
+        {/* 工具执行结果（持久化后，从数据库加载） */}
+        { message.toolResults?.map((result) => (
+          <ToolResultItem key={result.toolCallId} result={result} />
+        ))}
 
-          {/* Thinking 面板（独立组件，自己订阅状态） */}
-          {message.thinking && (
-            <ThinkingPanel
-              messageId={messageId}
-              defaultExpanded={true}
-            />
-          )}
+        {/* Thinking 面板（独立组件，自己订阅状态） */}
+        {message.thinking && (
+          <ThinkingPanel
+            messageId={messageId}
+            defaultExpanded={true}
+          />
+        )}
 
-          {/* Answer 内容 */}
-          {message.content && (
-            <div className="prose-container">
-              <MessageContent
-                content={message.content}
-                isStreaming={isStreamingAnswer}
-              />
-            </div>
-          )}
-
-          {/* 操作按钮 */}
-          {isStreaming && onRetry ? (
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onRetry}
-                className="h-7 w-7 hover:bg-gray-100 dark:hover:bg-gray-800"
-                title="重试"
-              >
-                <RotateCw className="h-4 w-4" />
-              </Button>
-            </div>
-          ) : message.content ? (
-            <MessageActions
+        {/* Answer 内容 */}
+        {message.content && (
+          <div className="prose-container">
+            <MessageContent
               content={message.content}
-              messageId={message.id}
-              role={message.role as 'user' | 'assistant'}
-              hasError={message.hasError}
-              onRetry={onRetry}
+              isStreaming={isStreamingAnswer}
             />
-          ) : null}
+          </div>
+        )}
+
+        {/* 操作按钮 */}
+        {isStreaming && onRetry ? (
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onRetry}
+              className="h-7 w-7 hover:bg-gray-100 dark:hover:bg-gray-800"
+              title="重试"
+            >
+              <RotateCw className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : message.content ? (
+          <MessageActions
+            content={message.content}
+            messageId={message.id}
+            role={message.role as 'user' | 'assistant'}
+            hasError={message.hasError}
+            onRetry={onRetry}
+          />
+        ) : null}
       </div>
     </div>
   )

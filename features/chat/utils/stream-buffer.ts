@@ -3,6 +3,11 @@
  * 
  * 将高频 SSE chunk 缓冲后通过 requestAnimationFrame 批量刷新，
  * 将渲染频次从 80-120 次/秒收敛至 ≤60 次/秒
+ * 本质上就是一个“把很多小块字符串先攒起来，再按帧批量吐出去”的小工具类，
+ * 专门用来给 SSE 这种高频流式输出做节流/合并。
+ * 
+ * 把“chunk 到达频率”用 requestAnimationFrame 节流到按浏览器帧刷新——同一帧里来的多个 chunk 先合并进 buffer，
+ * 下一帧再一次性 onFlush，从而让更新频率上限接近屏幕刷新率（通常 ~60 次/秒）。
  */
 
 export interface StreamBufferOptions {

@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react'
 import { Share2, Link2, X, Check, Copy } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button } from 'haiku-react-ui'
 import {
   Dialog,
   DialogContent,
@@ -119,7 +119,7 @@ export function ShareButton({ conversationId, className }: ShareButtonProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className={className}>
+        <Button variant="link" size="sm" className={className}>
           <Share2 className="h-4 w-4 mr-2" />
           分享
         </Button>
@@ -148,7 +148,7 @@ export function ShareButton({ conversationId, className }: ShareButtonProps) {
               </div>
               <Button
                 size="sm"
-                variant="outline"
+                variant="link"
                 onClick={handleCopy}
                 disabled={isCopied}
               >
@@ -175,7 +175,7 @@ export function ShareButton({ conversationId, className }: ShareButtonProps) {
           {isShared ? (
             <>
               <Button
-                variant="destructive"
+                variant="link"
                 size="sm"
                 onClick={handleUnshare}
                 disabled={isLoading}
@@ -184,7 +184,7 @@ export function ShareButton({ conversationId, className }: ShareButtonProps) {
                 取消分享
               </Button>
               <Button
-                variant="outline"
+                variant="link"
                 size="sm"
                 onClick={() => window.open(shareUrl, '_blank')}
               >
@@ -194,7 +194,7 @@ export function ShareButton({ conversationId, className }: ShareButtonProps) {
           ) : (
             <>
               <Button
-                variant="outline"
+                variant="link"
                 size="sm"
                 onClick={() => setIsOpen(false)}
               >

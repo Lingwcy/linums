@@ -20,6 +20,9 @@ export type SelectedModelInfo = {
 
 interface ChatState {
   // 消息
+  /**
+   * 1. 作为流式更新下拉时的滚动依赖 features\chat\components\MessageList\index.tsx
+   */
   messages: Message[]
   
   // 消息缓存（按 conversationId 索引）

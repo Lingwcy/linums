@@ -5,23 +5,40 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id            String         @id @default(cuid())
-  username      String?        @unique
+  id            String              @id @default(cuid())
+  username      String?             @unique
   password      String?
-  email         String?        @unique
+  email         String?             @unique
   emailVerified DateTime?
   name          String?
   image         String?
-  apiKey        String?
-  createdAt     DateTime       @default(now())
+  apiKey        String?             // 兼容旧版本：单一 API Key
+  createdAt     DateTime            @default(now())
   conversations Conversation[]
   accounts      Account[]
   sessions      Session[]
-  
+  providerApiKeys UserProviderApiKey[]
+
   @@index([email])
+}
+
+// 用户供应商 API Key 表 - 存储用户对不同供应商的 API Key
+model UserProviderApiKey {
+  id         String   @id @default(cuid())
+  userId     String
+  providerId String   // 供应商 ID: bigmodel, siliconflow, openrouter, openai
+  apiKey     String   // 加密存储的 API Key
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, providerId]) // 每个用户每个供应商只能有一个 API Key
+  @@index([userId])
 }
 
 model Account {

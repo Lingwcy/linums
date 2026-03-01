@@ -16,6 +16,7 @@ import { Sidebar } from '@/components/Sidebar'
 import { Header } from '@/components/Header'
 import { MessageList } from '@/features/chat/components/MessageList'
 import { ChatInput } from '@/features/chat/components/ChatInput'
+import { ChatStoreDebugPanel } from '@/features/chat/components/ChatStoreDebugPanel'
 import { ConversationList } from '@/features/conversation/components/ConversationList'
 import { NewChatButton } from '@/features/conversation/components/NewChatButton'
 import { ConversationSearch } from '@/features/conversation/components/ConversationSearch'
@@ -56,10 +57,13 @@ function ConversationContent() {
   }, [conversationId, router])
 
   return (
-    <MainLayout sidebar={<ChatSidebar />} header={<Header />}>
-      <MessageList key={conversationId} />
-      <ChatInput conversationId={conversationId} />
-    </MainLayout>
+    <>
+      <MainLayout sidebar={<ChatSidebar />} header={<Header />}>
+        <MessageList key={conversationId} />
+        <ChatInput conversationId={conversationId} />
+      </MainLayout>
+      <ChatStoreDebugPanel conversationId={conversationId} />
+    </>
   )
 }
 

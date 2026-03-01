@@ -79,7 +79,7 @@ export const ChatService = {
    * 取消指定工具的执行
    * @param abortStream - 是否同时中断整个流（默认 false）
    */
-  async cancelTool(messageId: string, toolCallId: string, abortStream = false): Promise<boolean> {
+  async requestCancelTool(messageId: string, toolCallId: string, abortStream = false): Promise<boolean> {
     try {
       const response = await fetch('/api/chat/cancel-tool', {
         method: 'POST',
