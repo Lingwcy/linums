@@ -11,7 +11,7 @@ import { z } from 'zod'
 import type { ProviderId } from '@/server/services/ai/gateway'
 
 // 支持的供应商列表
-const SUPPORTED_PROVIDERS: ProviderId[] = ['bigmodel', 'siliconflow', 'openrouter', 'openai']
+const SUPPORTED_PROVIDERS: ProviderId[] = ['bigmodel', 'siliconflow', 'openrouter', 'minimax', 'openai']
 
 const updateApiKeySchema = z.object({
   providerId: z.enum(SUPPORTED_PROVIDERS),

@@ -1,39 +1,28 @@
 /**
- * 智谱 AI (BigModel) API 封装
+ * MiniMax AI API 封装
  *
- * 负责与智谱 AI API 的通信
- * 智谱 AI 是国产大模型服务商，提供 glm 系列模型
- * 文档: https://open.bigmodel.cn/doc
- *
- * 使用示例:
- * ```typescript
- * const messages: ChatMessage[] = [
- *     { role: 'user', content: '你好，请介绍一下自己' }
- * ];
- *
- * callZhipuAPI('your-api-key', { model: 'glm-4', messages })
- *     .then(result => {
- *         console.log(result.choices[0].message.content);
- *     })
- *     .catch(error => {
- *         console.error('错误:', error);
- *     });
- * ```
+ * 负责与 MiniMax API 的通信
+ * MiniMax 是国产大模型服务商，提供 MoE 模型
+ * 文档: https://platform.minimaxi.com/document/Guides/Authentication
  */
 
-interface ChatMessage {
+const MINIMAX_API_URL = 'https://api.minimax.chat/v1/text/chatcompletion_v2'
+
+/**
+ * 聊天消息结构
+ */
+export interface ChatMessage {
+    /** 消息角色 */
     role: 'system' | 'user' | 'assistant'
+    /** 消息内容 */
     content: string
 }
-
-/** 智谱 AI API 端点 */
-const ZAI_API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions'
 
 /**
  * 聊天补全请求选项
  */
 export interface ChatCompletionOptions {
-    /** 模型名称，如 glm-4.7 */
+    /** 模型名称 */
     model: string
     /** 消息列表 */
     messages: ChatMessage[]
@@ -50,45 +39,55 @@ export interface ChatCompletionOptions {
 }
 
 /**
- * 智谱 AI API 响应
+ * MiniMax API 响应
  */
-export interface ZAIResponse {
+export interface MiniMaxResponse {
     /** 流式响应的读取器 */
     reader: ReadableStreamDefaultReader<Uint8Array>
 }
 
 /**
- * 调用智谱 AI Chat Completion API（流式）
+ * 调用 MiniMax Chat Completion API（流式）
  *
- * @param key - 智谱 AI API 密钥
+ * MiniMax API 是 OpenAI 兼容的，但有一些差异：
+ * - 使用 Group ID 来区分不同的模型组
+ * - stream 参数使用 "stream": 1/0 而非 boolean
+ *
+ * @param apiKey - MiniMax API 密钥 (格式: api_key)
+ * @param groupId - MiniMax Group ID
  * @param options - 聊天补全选项
  * @returns 包含流式响应 reader 的对象
  */
-export async function CallZhipuAPI(
-    key: string,
+export async function createChatCompletion(
+    apiKey: string,
+    groupId: string,
     options: ChatCompletionOptions
-): Promise<ZAIResponse> {
-    const url = ZAI_API_URL
-    const { model = 'glm-4.7', messages, enableThinking = false, thinkingBudget = 4096, tools, toolChoice } = options
+): Promise<MiniMaxResponse> {
+    const { model, messages, enableThinking = false, thinkingBudget = 4096, tools, toolChoice } = options
     const modelInfo = options.modelInfo
 
     // 构建请求体
     const requestBody: Record<string, unknown> = {
         model,
         messages,
-        stream: true,  // 启用流式响应
-        temperature: 0.7,  // 温度参数
+        stream: 1,  // MiniMax 使用 1/0 表示流式
+        temperature: 0.7,
         max_tokens: enableThinking || modelInfo?.isReasoningModel ? 4096 : 1024,
     }
 
     // Reasoning 模型：只用 thinking_budget
     if (modelInfo?.isReasoningModel) {
-        requestBody.thinking_budget = thinkingBudget
+        requestBody.thinking = {
+            type: 'enabled',
+            budget: thinkingBudget,
+        }
     }
-    // 普通模型支持思考开关：用 enable_thinking + thinking_budget
+    // 普通模型支持思考开关
     else if (enableThinking && modelInfo?.supportsThinkingToggle) {
-        requestBody.enable_thinking = true
-        requestBody.thinking_budget = thinkingBudget
+        requestBody.thinking = {
+            type: 'enabled',
+            budget: thinkingBudget,
+        }
     }
 
     // 如果提供了 tools，添加到请求中
@@ -97,22 +96,25 @@ export async function CallZhipuAPI(
         requestBody.tool_choice = toolChoice || 'auto'
     }
 
-    console.log('[AIRequest] 请求体:', JSON.stringify(requestBody, null, 2))
+    console.log('[AIRequest] MiniMax 请求体:', JSON.stringify(requestBody, null, 2))
 
-    // 发送 POST 请求到智谱 AI API
+    // 构建 URL（包含 Group ID）
+    const url = `${MINIMAX_API_URL}?GroupId=${groupId}`
+
+    // 发送 POST 请求到 MiniMax API
     const response = await fetch(url, {
         method: 'POST',
         headers: {
-            Authorization: `Bearer ${key}`,
+            Authorization: `Bearer ${apiKey}`,
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody, null, 2)
-    });
+        body: JSON.stringify(requestBody),
+    })
 
     // 检查响应状态
     if (!response.ok) {
         const errorText = await response.text()
-        throw new Error(`ZAI API error: ${response.status} - ${errorText}`)
+        throw new Error(`MiniMax API error: ${response.status} - ${errorText}`)
     }
 
     // 获取流式响应的 reader

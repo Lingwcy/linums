@@ -1,9 +1,17 @@
 /**
  * Chat Message UI Component - 消息 UI 组件
- * 
+ *
  * 纯展示组件，负责渲染单条消息
  * 根据 role 区分用户消息和 AI 消息的渲染方式
- * 
+ *
+ * 消息结构：
+ * - user: 用户消息，右对齐，气泡样式
+ * - assistant: AI 消息，左对齐，包含：
+ *   - 思考过程 (thinking)
+ *   - 回答内容 (content)
+ *   - 工具调用 (toolInvocations)
+ *   - 工具结果 (toolResults)
+ *
  * @module modules/chat-message/ChatMessageUI
  */
 
@@ -21,26 +29,35 @@ import type { Message, ToolInvocation, ToolResult, SearchSource } from '@/featur
 import type { MessagePhase } from '@/features/chat/types/message-state'
 
 /**
- * 搜索状态组件 - 简洁风格，类似 Perplexity
+ * WebSearchStatus - 网页搜索状态组件
+ *
+ * 简洁风格，类似 Perplexity
+ * 显示搜索的实时状态和结果来源
+ *
+ * 状态：
+ * - running/pending: 搜索中，显示加载动画
+ * - failed: 搜索失败，显示错误图标
+ * - completed: 完成，显示来源标签
  */
 function WebSearchStatus({ invocation }: { invocation: ToolInvocation }) {
   const [isExpanded, setIsExpanded] = useState(false)
+  // 搜索结果来源
   const sources = invocation.result?.sources as SearchSource[] | undefined
 
-  // 搜索中
+  // 搜索中状态
   if (invocation.state === 'running' || invocation.state === 'pending') {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Loader2 className="h-3.5 w-3.5 animate-spin" />
         <span>搜索中...</span>
         {invocation.args?.query && (
-          <span className="text-xs opacity-70">&quot;{invocation.args.query}&quot;</span>
+          <span className="text-xs opacity-70">"{invocation.args.query}"</span>
         )}
       </div>
     )
   }
 
-  // 失败
+  // 失败状态
   if (invocation.state === 'failed') {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -50,7 +67,7 @@ function WebSearchStatus({ invocation }: { invocation: ToolInvocation }) {
     )
   }
 
-  // 完成 - 显示来源标签
+  // 完成状态 - 显示来源标签
   const hasSources = sources && sources.length > 0
 
   return (
@@ -73,6 +90,7 @@ function WebSearchStatus({ invocation }: { invocation: ToolInvocation }) {
               </span>
             </a>
           ))}
+          {/* 展开/收起更多来源 */}
           {sources.length > 3 && (
             <button
               onClick={() => setIsExpanded(!isExpanded)}
@@ -92,8 +110,14 @@ function WebSearchStatus({ invocation }: { invocation: ToolInvocation }) {
 }
 
 /**
- * 渲染单个工具调用
- * 图片生成完成后会直接插入到 content 流中，这里只显示 loading 状态
+ * ToolInvocationItem - 工具调用组件
+ *
+ * 渲染正在运行的工具调用
+ * 根据工具类型显示不同 UI：
+ * - generate_image: 图片生成，显示进度条和取消按钮
+ * - web_search: 网页搜索，显示搜索状态
+ *
+ * 注意：图片生成完成后会直接插入到 content 流中，这里只显示 loading 状态
  */
 function ToolInvocationItem({
   invocation,
@@ -104,14 +128,16 @@ function ToolInvocationItem({
   _messageId?: string
   onCancel?: (toolCallId: string) => void
 }) {
-  // 图片生成 - 显示进度条、取消按钮
+  // ========== 图片生成工具 ==========
   if (invocation.name === 'generate_image') {
+    // 运行中/等待中 - 显示进度
     if (invocation.state === 'running' || invocation.state === 'pending') {
       const progress = (invocation as { progress?: number }).progress ?? 0
       const estimatedTime = (invocation as { estimatedTime?: number }).estimatedTime
 
       return (
         <div className="space-y-2">
+          {/* 进度信息行 */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -121,6 +147,7 @@ function ToolInvocationItem({
                 <span className="text-xs opacity-70">约 {estimatedTime}s</span>
               )}
             </div>
+            {/* 取消按钮 */}
             {onCancel && (
               <Button
                 variant="ghost"
@@ -144,6 +171,8 @@ function ToolInvocationItem({
         </div>
       )
     }
+
+    // 失败状态
     if (invocation.state === 'failed') {
       return (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -152,6 +181,8 @@ function ToolInvocationItem({
         </div>
       )
     }
+
+    // 取消状态
     if (invocation.state === 'cancelled') {
       return (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -160,11 +191,12 @@ function ToolInvocationItem({
         </div>
       )
     }
+
     // 完成状态不渲染，图片已插入到 content 中
     return null
   }
 
-  // 搜索工具
+  // ========== 网页搜索工具 ==========
   if (invocation.name === 'web_search') {
     return <WebSearchStatus invocation={invocation} />
   }
@@ -173,18 +205,22 @@ function ToolInvocationItem({
 }
 
 /**
- * 渲染持久化的工具结果
- * 方案 A：图片在 content 中渲染，这里不单独显示
+ * ToolResultItem - 工具结果组件
+ *
+ * 渲染已完成的工具结果（从数据库加载）
+ * 目前主要用于显示搜索结果的来源标签
+ *
+ * 注意：图片生成结果不在这里渲染，会在 content 的 markdown 中显示
  */
 function ToolResultItem({ result }: { result: ToolResult }) {
   const [isExpanded, setIsExpanded] = useState(false)
 
-  // 图片生成结果不在这里渲染，会在 content 的 markdown 中显示
+  // 图片生成结果不在这里渲染
   if (result.name === 'generate_image') {
     return null
   }
 
-  // 搜索结果 - 简洁的来源标签
+  // 搜索结果 - 显示来源标签
   if (result.name === 'web_search' && result.result.sources && result.result.sources.length > 0) {
     const sources = result.result.sources as SearchSource[]
     return (
@@ -204,6 +240,7 @@ function ToolResultItem({ result }: { result: ToolResult }) {
             </span>
           </a>
         ))}
+        {/* 展开/收起更多来源 */}
         {sources.length > 3 && (
           <button
             onClick={() => setIsExpanded(!isExpanded)}
@@ -250,11 +287,21 @@ interface ChatMessageUIProps {
 }
 
 /**
- * 消息 UI 组件
- * 
+ * ChatMessageUI - 消息 UI 组件
+ *
  * 渲染单条消息，根据 role 区分样式
+ *
+ * 布局结构：
  * - user: 右对齐蓝色气泡
- * - assistant: 左对齐，包含 thinking 和 answer 区域
+ *   - 文件附件（可选）
+ *   - 消息内容 / 编辑框
+ * - assistant: 左对齐，包含：
+ *   - 等待状态
+ *   - 工具调用状态
+ *   - 工具结果
+ *   - 思考面板 (thinking)
+ *   - 回答内容 (content)
+ *   - 操作按钮
  */
 export function ChatMessageUI({
   message,
@@ -265,14 +312,16 @@ export function ChatMessageUI({
   onEdit,
   onCancelTool,
 }: ChatMessageUIProps) {
+  // 是否为用户消息
   const isUser = message.role === 'user'
+  // 编辑状态
   const [isEditing, setIsEditing] = useState(false)
 
   // 根据状态机计算显示状态
   const isStreaming = isProcessing
   const isStreamingAnswer = phase === 'answering'
 
-  // ============ 用户消息 ============
+  // ==================== 用户消息 ====================
   if (isUser) {
     return (
       <div className="w-full py-4 group">
@@ -289,6 +338,7 @@ export function ChatMessageUI({
             </Button>
           )}
 
+          {/* 消息容器 */}
           <div className="max-w-[70%] flex flex-col items-end gap-2">
             {/* 文件附件标签 */}
             {message.attachments && message.attachments.length > 0 && (
@@ -303,11 +353,13 @@ export function ChatMessageUI({
                         : "bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800"
                     )}
                   >
+                    {/* 文件类型图标 */}
                     {file.type === 'md' ? (
                       <MarkdownIcon className="h-3 w-3 text-orange-500" />
                     ) : (
                       <TextFileIcon className="h-3 w-3 text-blue-500" />
                     )}
+                    {/* 文件名 */}
                     <span className={cn(
                       "font-medium",
                       file.type === 'md'
@@ -316,6 +368,7 @@ export function ChatMessageUI({
                     )}>
                       {file.name}
                     </span>
+                    {/* 文件大小 */}
                     <span className={cn(
                       "text-xs",
                       file.type === 'md'
@@ -329,8 +382,9 @@ export function ChatMessageUI({
               </div>
             )}
 
-            {/* 消息内容 */}
+            {/* 消息内容：编辑模式 / 展示模式 */}
             {isEditing ? (
+              /* 编辑模式：显示编辑组件 */
               <MessageEdit
                 originalContent={message.content}
                 onCancel={() => setIsEditing(false)}
@@ -340,6 +394,7 @@ export function ChatMessageUI({
                 }}
               />
             ) : (
+              /* 展示模式：显示气泡 */
               <div className="rounded-3xl bg-[hsl(var(--message-user-bg))] px-5 py-3">
                 <div className="text-[15px] leading-relaxed whitespace-pre-wrap break-words text-[hsl(var(--text-primary))]">
                   {message.content}
@@ -352,24 +407,28 @@ export function ChatMessageUI({
     )
   }
 
-  // ============ AI 消息 ============
+  // ==================== AI 消息 ====================
 
-  // 根据 displayState 决定显示内容
+  // 判断显示状态
+  // 等待中：无处理中 + 无思考 + 无内容 + 显示状态为 waiting
   const showWaitingIndicator = !isProcessing && !message.thinking && !message.content && message.displayState === 'waiting'
+  // 错误状态：阶段为 error 或有错误标志 + 无内容
   const showErrorIndicator = (phase === 'error' || message.hasError) && !message.content
 
   return (
     <div className="w-full py-6">
       <div className="space-y-4">
-        {/* Waiting 状态：等待响应 */}
+        {/* 1. 等待响应状态 */}
         {showWaitingIndicator && (
           <div className="flex items-center gap-2 text-[hsl(var(--text-secondary))]">
             {
               showErrorIndicator ?
+                /* 错误状态 */
                 <div className="flex items-center gap-2 text-red-500">
                   <CircleOff className="h-4 w-4" />
                   <span className="text-sm">生成失败</span>
                 </div> :
+                /* 等待中 */
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
                   <span className="text-sm">等待响应...</span>
@@ -379,7 +438,8 @@ export function ChatMessageUI({
         )}
 
 
-        {/* 工具调用状态（运行时，支持多个并行） */}
+        {/* 2. 工具调用状态（运行时） */}
+        {/* 渲染正在执行的工具调用，支持多个并行 */}
         {message.toolInvocations?.map((invocation) => (
           <ToolInvocationItem
             key={invocation.toolCallId}
@@ -389,12 +449,13 @@ export function ChatMessageUI({
           />
         ))}
 
-        {/* 工具执行结果（持久化后，从数据库加载） */}
+        {/* 3. 工具执行结果（持久化后，从数据库加载） */}
         { message.toolResults?.map((result) => (
           <ToolResultItem key={result.toolCallId} result={result} />
         ))}
 
-        {/* Thinking 面板（独立组件，自己订阅状态） */}
+        {/* 4. 思考面板 - AI 的推理过程 */}
+        {/* 仅在有思考内容时显示 */}
         {message.thinking && (
           <ThinkingPanel
             messageId={messageId}
@@ -402,7 +463,8 @@ export function ChatMessageUI({
           />
         )}
 
-        {/* Answer 内容 */}
+        {/* 5. 回答内容 - AI 的最终回复 */}
+        {/* 渲染 Markdown 格式内容 */}
         {message.content && (
           <div className="prose-container">
             <MessageContent
@@ -412,7 +474,8 @@ export function ChatMessageUI({
           </div>
         )}
 
-        {/* 操作按钮 */}
+        {/* 6. 操作按钮 */}
+        {/* 流式输出中：显示重试按钮 */}
         {isStreaming && onRetry ? (
           <div className="flex items-center gap-1">
             <Button
@@ -426,6 +489,7 @@ export function ChatMessageUI({
             </Button>
           </div>
         ) : message.content ? (
+          /* 有内容时：显示完整操作菜单 */
           <MessageActions
             content={message.content}
             messageId={message.id}

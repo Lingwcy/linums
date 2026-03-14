@@ -15,6 +15,7 @@ const PROVIDER_ENV_KEYS: Record<ProviderId, string | undefined> = {
   openrouter: process.env.OPENROUTER_API_KEY,
   bigmodel: process.env.BIGMODEL_API_KEY || process.env.ZHIPU_API_KEY,
   siliconflow: process.env.SILICONFLOW_API_KEY,
+  minimax: process.env.MINIMAX_API_KEY,
   openai: process.env.OPENAI_API_KEY,
 }
 

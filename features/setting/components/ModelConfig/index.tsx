@@ -132,6 +132,7 @@ export function ModelConfig() {
         bigmodel: '智谱',
         siliconflow: '硅基流动',
         openrouter: 'OpenRouter',
+        minimax: 'MiniMax',
         openai: 'OpenAI',
     }
 
@@ -164,6 +165,9 @@ export function ModelConfig() {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onSelect={() => onSelectProvider("openrouter")}>
                                 OpenRouter {!isProviderConfigReady("openrouter") && <AlertCircle className="h-3 w-3 ml-1 text-orange-500" />}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => onSelectProvider("minimax")}>
+                                MiniMax {!isProviderConfigReady("minimax") && <AlertCircle className="h-3 w-3 ml-1 text-orange-500" />}
                             </DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => onSelectProvider("openai")}>
                                 OpenAI {!isProviderConfigReady("openai") && <AlertCircle className="h-3 w-3 ml-1 text-orange-500" />}

@@ -22,10 +22,10 @@ import { createMarkdownComponents } from './MarkdownComponents'
 interface MessageContentProps {
   /** 消息内容（Markdown 格式） */
   content: string
-  
+
   /** 是否正在流式传输 */
   isStreaming?: boolean
-  
+
   /** 是否禁用媒体块渲染（用于 thinking 面板） */
   disableMediaBlocks?: boolean
 }
@@ -43,36 +43,46 @@ interface MessageContentProps {
  */
 function preprocessStreamingContent(content: string, isStreaming: boolean): string {
   if (!isStreaming || !content) return content
-  
+
   // 统计代码块的开始和结束
   const codeBlockPattern = /```/g
   const matches = content.match(codeBlockPattern)
   const count = matches?.length || 0
-  
+
   // 如果没有代码块或代码块数量是偶数（都闭合了），直接返回
   if (count === 0 || count % 2 === 0) {
     return content
   }
-  
+
   // 有未闭合的代码块
   const lastOpenBlock = content.lastIndexOf('```')
   const afterBlock = content.slice(lastOpenBlock + 3)
+    /** afterBlock.match(/^(\w+)/)
+    [
+    'json',      // [0] 完整匹配结果
+    'json',      // [1] 第一个捕获组的内容
+    index: 0,
+    input: 'json\n{"key": "value"}',
+    groups: undefined
+   ]
+   */
   const langMatch = afterBlock.match(/^(\w+)/)
+
   const lang = langMatch?.[1]
-  
+
   // 如果是媒体块，需要特殊处理
   if (lang && ['image', 'chart', 'weather'].includes(lang)) {
     const blockContent = afterBlock.slice(lang.length).trim()
-    
+
     // 检查是否有完整的 JSON
     const jsonStart = blockContent.indexOf('{')
     const jsonEnd = blockContent.lastIndexOf('}')
-    
+
     // JSON 不完整，隐藏整个代码块
     if (jsonStart === -1 || jsonEnd === -1 || jsonEnd < jsonStart) {
       return content.slice(0, lastOpenBlock)
     }
-    
+
     // 尝试解析 JSON
     const jsonStr = blockContent.slice(jsonStart, jsonEnd + 1)
     try {
@@ -84,7 +94,7 @@ function preprocessStreamingContent(content: string, isStreaming: boolean): stri
       return content.slice(0, lastOpenBlock)
     }
   }
-  
+
   // 普通代码块，补上闭合标记
   return content + '\n```'
 }
@@ -105,13 +115,13 @@ export function MessageContent({
     () => createMarkdownComponents(isStreaming, disableMediaBlocks),
     [isStreaming, disableMediaBlocks]
   )
-  
+
   // 预处理内容：流式时延迟渲染未闭合的代码块
   const processedContent = useMemo(
     () => preprocessStreamingContent(content, isStreaming),
     [content, isStreaming]
   )
-  
+
   return (
     <div className="prose prose-sm dark:prose-invert max-w-none">
       <ReactMarkdown

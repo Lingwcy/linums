@@ -21,7 +21,8 @@ interface ApiKeyConfigProps {
 const PROVIDERS = [
   { id: 'bigmodel', label: '智谱', description: '智谱 AI' },
   { id: 'siliconflow', label: '硅基流动', description: 'SiliconFlow' },
-  { id: 'openrouter', label: 'OpenRouter', description: 'OpenRouter ' },
+  { id: 'openrouter', label: 'OpenRouter', description: 'OpenRouter' },
+  { id: 'minimax', label: 'MiniMax', description: 'MiniMax MoE 大模型' },
   { id: 'openai', label: 'OpenAI', description: 'OpenAI' },
 ]
 

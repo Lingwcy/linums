@@ -1,9 +1,10 @@
 import { create } from "zustand"
 
 import { BIGMODEL_MODELS, type BigModelModel } from "../modelzoo/bigmodel"
+import { MINIMAX_MODELS, type MiniMaxModel } from "../modelzoo/minimax"
 import type { OpenRouterProviderItem } from "../modelzoo/openrouter"
 
-export type ProviderId = "bigmodel" | "siliconflow" | "openrouter" | "openai"
+export type ProviderId = "bigmodel" | "siliconflow" | "openrouter" | "minimax" | "openai"
 
 export interface ModelProviderItem {
 	id: string
@@ -34,10 +35,24 @@ export function bigModelToProviderItem(m: BigModelModel): ModelProviderItem {
 	}
 }
 
+export function minimaxToProviderItem(m: MiniMaxModel): ModelProviderItem {
+	return {
+		id: m.id,
+		name: m.name,
+		description: m.description,
+		category: m.category,
+		isReasoningModel: m.isReasoningModel,
+		supportsThinkingToggle: m.supportsThinkingToggle,
+		maxTokens: m.maxTokens,
+		providerId: "minimax",
+	}
+}
+
 export const MODEL_ZOO_PROVIDERS: ProviderDef[] = [
 	{ id: "bigmodel", label: "智谱" },
 	{ id: "siliconflow", label: "硅基流动" },
 	{ id: "openrouter", label: "OpenRouter" },
+	{ id: "minimax", label: "MiniMax" },
 	{ id: "openai", label: "OpenAI" },
 ]
 
@@ -72,12 +87,14 @@ const initialState: ModelZooUiState = {
 		bigmodel: BIGMODEL_MODELS.map(bigModelToProviderItem),
 		siliconflow: [],
 		openrouter: [],
+		minimax: MINIMAX_MODELS.map(minimaxToProviderItem),
 		openai: [],
 	},
 	providerStatus: {
 		bigmodel: "success",
 		siliconflow: "idle",
 		openrouter: "idle",
+		minimax: "success",
 		openai: "idle",
 	},
 	providerError: {},
@@ -120,6 +137,8 @@ export const useModelZooStore = create<ModelZooUiState & ModelZooUiAction>()((se
 				models = (Array.isArray(json) ? (json as OpenRouterProviderItem[]) : []) as ModelProviderItem[]
 			} else if (providerId === "bigmodel") {
 				models = BIGMODEL_MODELS.map(bigModelToProviderItem)
+			} else if (providerId === "minimax") {
+				models = MINIMAX_MODELS.map(minimaxToProviderItem)
 			} else {
 				// 其它 provider 目前未接入数据源，保持空数组
 				models = []

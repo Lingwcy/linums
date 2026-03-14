@@ -11,7 +11,7 @@
  */
 
 import * as React from 'react'
-import { Button } from '@/components/ui/button'
+import { Button } from 'haiku-react-ui'
 import { useToast } from '@/lib/hooks/use-toast'
 import { Loader2 } from 'lucide-react'
 import { useOAuthPopup } from '@/features/auth/hooks/use-oauth-popup'
@@ -49,6 +49,7 @@ export function OAuth2Login({ onSuccess }: OAuth2LoginProps) {
       {/* Google 登录按钮 - 使用官方白色样式 */}
       <Button
         type="button"
+        variant='primary'
         className="w-full bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 font-medium"
         onClick={() => openPopup('google')}
         disabled={!!isLoading}
@@ -70,6 +71,7 @@ export function OAuth2Login({ onSuccess }: OAuth2LoginProps) {
       {/* GitHub 登录按钮 - 使用官方黑色 #24292f */}
       <Button
         type="button"
+        variant='primary'
         className="w-full bg-[#24292f] hover:bg-[#1b1f23] text-white"
         onClick={() => openPopup('github')}
         disabled={!!isLoading}

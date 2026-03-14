@@ -72,6 +72,7 @@ export function ModelSelector({ value, onChange, className, showApiKeyWarning = 
     bigmodel: '智谱',
     siliconflow: '硅基流动',
     openrouter: 'OpenRouter',
+    minimax: 'MiniMax',
     openai: 'OpenAI',
   }
 
