@@ -1,5 +1,25 @@
 "use client"
 
+/**
+ * ModelConfig - 模型配置组件
+ *
+ * 功能：
+ * - 选择 AI Provider（智谱、硅基流动、OpenRouter、MiniMax、OpenAI）
+ * - 浏览各 Provider 的可用模型列表
+ * - 搜索筛选模型
+ * - 分页浏览模型
+ * - 添加模型到"常用"列表
+ * - 从常用列表移除模型
+ * - 显示 API Key 配置状态
+ *
+ * 布局结构：
+ * - 顶部：Provider 下拉选择 + 搜索输入框
+ * - 左侧：云端模型卡片列表（带分页）
+ * - 右侧：已添加的常用模型列表
+ *
+ * @module features/setting/components/ModelConfig
+ */
+
 import { useEffect, useMemo } from "react"
 import { Button } from "haiku-react-ui"
 import {
@@ -39,8 +59,17 @@ import {
     useModelZooStore,
 } from "@/features/setting/store/modelzoo.store"
 
+/** 每页显示的模型数量 */
 const PAGE_SIZE = 12
 
+/**
+ * ModelConfig - 模型配置主组件
+ *
+ * 整合模型动物园和本地存储的模型列表：
+ * - 从 modelzoo.store 获取云端模型
+ * - 从 model.store 获取本地常用模型
+ * - 支持 Provider 切换、搜索、分页
+ */
 export function ModelConfig() {
     const providerId = useModelZooStore(s => s.providerId)
     const keyword = useModelZooStore(s => s.keyword)
@@ -287,14 +316,42 @@ export function ModelConfig() {
         </div>
     )
 }
+/**
+ * ModelProviderCard 组件属性
+ */
 interface ModelProviderCardProps {
+    /** 模型数据 */
     data: ModelProviderItem
+    /** 显示状态：cloud=云端模型，local=本地常用 */
     status?: 'cloud' | 'local'
+    /** 删除回调 */
     onDelete?: (m: ModelProviderItem) => void
+    /** 添加到本地常用回调 */
     onAddToLocal?: (m: ModelProviderItem) => void
+    /** 是否已添加到常用列表 */
     isAdded?: boolean
+    /** API Key 是否已配置 */
     isApiKeyConfigured?: boolean
 }
+
+/**
+ * ModelProviderCard - 模型卡片组件
+ *
+ * 显示单个模型的详细信息：
+ * - 模型名称
+ * - 标签（分类、推理模型、免费等）
+ * - 模型描述
+ * - 模型 ID（可复制）
+ * - 操作按钮（添加/删除）
+ *
+ * 云端模型状态：
+ * - 未配置 API Key：显示警告，需要先配置
+ * - 未添加：显示"添加常用"按钮
+ * - 已添加：显示"已添加"状态
+ *
+ * 本地模型状态：
+ * - 显示"删除"按钮
+ */
 export default function ModelProviderCard({
     data,
     status = 'cloud',

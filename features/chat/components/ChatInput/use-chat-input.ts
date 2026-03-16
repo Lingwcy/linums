@@ -1,6 +1,18 @@
 /**
- * ChatInput Hook
- * 处理输入逻辑，接收 conversationId 参数
+ * useChatInput - 聊天输入 Hook
+ *
+ * 处理聊天输入的各种逻辑：
+ * - 文本输入和提交
+ * - 文件上传
+ * - 语音录制和转文字
+ * - 图片生成
+ *
+ * 职责分离：
+ * - useChatInput：处理输入逻辑
+ * - ChatInputUI：处理 UI 渲染
+ * - ChatService：处理业务逻辑
+ *
+ * @module features/chat/components/ChatInput/use-chat-input
  */
 
 import { useCallback, useState, useEffect } from 'react'
@@ -12,19 +24,36 @@ import { useToast } from '@/lib/hooks/use-toast'
 import type { FileAttachment } from '@/features/chat/types/chat'
 import type { ImageConfig } from '../ImageGenerationModal'
 
+/**
+ * useChatInput Hook 配置选项
+ */
 interface UseChatInputOptions {
+  /** 会话 ID */
   conversationId: string
 }
 
+/**
+ * useChatInput - 聊天输入 Hook
+ *
+ * @param conversationId - 会话 ID
+ * @returns 各种输入处理函数和状态
+ */
 export function useChatInput({ conversationId }: UseChatInputOptions) {
+  // ========== 状态 ==========
+
+  /** 输入框文本 */
   const [input, setInput] = useState('')
+  /** 已上传的文件列表 */
   const [uploadedFiles, setUploadedFiles] = useState<FileAttachment[]>([])
+  /** 是否正在转写语音 */
   const [isTranscribing, setIsTranscribing] = useState(false)
   const { toast } = useToast()
 
+  // 从 Store 获取状态
   const isSendingMessage = useChatStore((s) => s.isSendingMessage)
   const stopStreaming = useChatStore((s) => s.stopStreaming)
 
+  // 语音录制 Hook
   const {
     isRecording,
     audioBlob,
@@ -34,6 +63,17 @@ export function useChatInput({ conversationId }: UseChatInputOptions) {
     clearAudio,
   } = useAudioRecorder()
 
+  // ========== 回调函数 ==========
+
+  /**
+   * handleSubmit - 提交消息
+   *
+   * 流程：
+   * 1. 阻止表单默认提交
+   * 2. 验证输入非空且不在发送中
+   * 3. 清空输入框和文件列表
+   * 4. 调用 ChatService 发送消息
+   */
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault()
@@ -43,27 +83,47 @@ export function useChatInput({ conversationId }: UseChatInputOptions) {
       const content = input.trim()
       const attachments = uploadedFiles.length > 0 ? [...uploadedFiles] : undefined
 
+      // 清空输入
       setInput('')
       setUploadedFiles([])
 
+      // 发送消息
       await ChatService.sendMessage(conversationId, content, { createUserMessage: true, attachments })
     },
     [input, isSendingMessage, uploadedFiles, conversationId]
   )
 
+  /**
+   * handleStop - 停止生成
+   *
+   * 用户点击"停止生成"按钮时调用
+   */
   const handleStop = useCallback(() => {
     ChatService.abortStream()
     stopStreaming('user_stop')
   }, [stopStreaming])
 
+  /**
+   * handleInputChange - 输入框变化
+   */
   const handleInputChange = useCallback((value: string) => {
     setInput(value)
   }, [])
 
+  /**
+   * handleFileUpload - 文件上传
+   *
+   * 流程：
+   * 1. 获取上传的文件
+   * 2. 构建 FormData
+   * 3. 调用上传 API
+   * 4. 添加到文件列表
+   */
   const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
+    // 清空 input，让同一文件可以再次上传
     e.target.value = ''
 
     try {
@@ -97,10 +157,16 @@ export function useChatInput({ conversationId }: UseChatInputOptions) {
     }
   }, [toast])
 
+  /**
+   * handleRemoveFile - 移除文件
+   */
   const handleRemoveFile = useCallback((index: number) => {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index))
   }, [])
 
+  /**
+   * handleStartRecording - 开始录音
+   */
   const handleStartRecording = useCallback(async () => {
     try {
       await startAudioRecording()
@@ -113,18 +179,28 @@ export function useChatInput({ conversationId }: UseChatInputOptions) {
     }
   }, [startAudioRecording, toast])
 
+  /**
+   * handleStopRecording - 停止录音
+   */
   const handleStopRecording = useCallback(() => {
     stopAudioRecording()
   }, [stopAudioRecording])
 
+  /**
+   * handleCancelRecording - 取消录音
+   */
   const handleCancelRecording = useCallback(() => {
     cancelRecording()
   }, [cancelRecording])
 
-  // 处理登录后的 pending message（从 URL 参数读取）
-  // 注意：这个逻辑移到了 ConversationContent 组件中处理
-  // 因为那里可以在 loadMessages 完成后直接发送
-  // 处理用户语音输入
+  // ========== 语音转文字 ==========
+
+  /**
+   * 监听 audioBlob 变化，自动转写
+   *
+   * 当用户停止录音后，audioBlob 会更新
+   * 自动调用语音识别 API 转写为文字
+   */
   useEffect(() => {
     if (!audioBlob) return
 
@@ -153,7 +229,14 @@ export function useChatInput({ conversationId }: UseChatInputOptions) {
     transcribe()
   }, [audioBlob, clearAudio, toast])
 
-  // 处理图片生成（通过 Modal 配置）
+  // ========== 图片生成 ==========
+
+  /**
+   * handleImageGenerate - 图片生成
+   *
+   * 通过 Modal 配置后触发
+   * 构建提示词并发送消息
+   */
   const handleImageGenerate = useCallback(
     async (config: ImageConfig) => {
       if (isSendingMessage) return
@@ -167,13 +250,15 @@ export function useChatInput({ conversationId }: UseChatInputOptions) {
       if (config.image_size && config.image_size !== '1024x1024') {
         content += `\n图片尺寸：${config.image_size}`
       }
-      
+
       await ChatService.sendMessage(conversationId, content, {
         createUserMessage: true,
       })
     },
     [isSendingMessage, conversationId]
   )
+
+  // ========== 返回值 ==========
 
   return {
     input,

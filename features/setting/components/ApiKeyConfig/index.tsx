@@ -1,5 +1,22 @@
 'use client'
 
+/**
+ * API Key 配置组件
+ *
+ * 功能：
+ * - 显示各 AI Provider 的 API Key 配置状态
+ * - 保存新的 API Key 到服务端
+ * - 删除已配置的 API Key
+ * - 显示/隐藏 API Key（脱敏处理）
+ *
+ * 布局结构：
+ * - 头部：标题 + 错误/成功提示
+ * - 内容：可滚动的 Provider 卡片列表
+ * - 每个卡片：Provider 名称、描述、输入框、保存/删除按钮
+ *
+ * @module features/setting/components/ApiKeyConfig
+ */
+
 import { useState, useEffect } from 'react'
 import { Button } from 'haiku-react-ui'
 import { Input } from '@/components/ui/input'
@@ -8,16 +25,32 @@ import { Check, Key, Trash2, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-re
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
+/**
+ * Provider 配置状态
+ */
 interface ProviderStatus {
+  /** Provider 标识符 */
   providerId: string
+  /** 是否已配置 API Key */
   configured: boolean
 }
 
+/**
+ * ApiKeyConfig 组件属性
+ */
 interface ApiKeyConfigProps {
+  /** 保存成功后的回调 */
   onSuccess?: () => void
 }
 
-// 供应商信息
+/**
+ * 支持的 AI Provider 列表
+ *
+ * 每个 Provider 包含：
+ * - id: 唯一标识符
+ * - label: 显示名称
+ * - description: 描述信息
+ */
 const PROVIDERS = [
   { id: 'bigmodel', label: '智谱', description: '智谱 AI' },
   { id: 'siliconflow', label: '硅基流动', description: 'SiliconFlow' },
@@ -26,6 +59,16 @@ const PROVIDERS = [
   { id: 'openai', label: 'OpenAI', description: 'OpenAI' },
 ]
 
+/**
+ * ApiKeyConfig - API Key 配置组件
+ *
+ * 用户管理各 Provider 的 API Key：
+ * - 加载时获取各 Provider 的配置状态
+ * - 输入框输入新的 API Key
+ * - 保存按钮提交到服务端
+ * - 已配置的 Key 可选择删除
+ * - 已配置的 Key 可切换显示/隐藏
+ */
 export function ApiKeyConfig({ onSuccess }: ApiKeyConfigProps) {
   const [providerStatus, setProviderStatus] = useState<ProviderStatus[]>([])
   const [loading, setLoading] = useState(true)

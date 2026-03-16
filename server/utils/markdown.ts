@@ -8,6 +8,16 @@ import html from 'remark-html'
 import { rehype } from 'rehype'
 import rehypeHighlight from 'rehype-highlight'
 
+/**
+ * preprocessImageBlock - 预处理图片块
+ *
+ * 将 ```image 代码块转换为 HTML <figure> 标签
+ * 提取 JSON 数据中的 url、alt、width、height 属性
+ * 解析失败时返回原始代码块
+ *
+ * @param markdown - 原始 Markdown 文本
+ * @returns 处理后的 Markdown 文本
+ */
 function preprocessImageBlock(markdown: string): string {
   return markdown.replace(
     /```image\n([\s\S]*?)\n```/g,
@@ -30,6 +40,16 @@ function preprocessImageBlock(markdown: string): string {
   )
 }
 
+/**
+ * preprocessWeatherBlock - 预处理天气块
+ *
+ * 将 ```weather 代码块转换为美观的天气卡片 HTML
+ * 提取 JSON 数据中的城市、温度、天气状况、湿度、风速等信息
+ * 解析失败时返回原始代码块
+ *
+ * @param markdown - 原始 Markdown 文本
+ * @returns 处理后的 Markdown 文本
+ */
 function preprocessWeatherBlock(markdown: string): string {
   return markdown.replace(
     /```weather\n([\s\S]*?)\n```/g,
@@ -63,6 +83,17 @@ function preprocessWeatherBlock(markdown: string): string {
   )
 }
 
+/**
+ * preprocessChartBlock - 预处理图表块
+ *
+ * 将 ```chart 代码块转换为 HTML 表格
+ * 支持柱状图（bar）和折线图（line）两种类型
+ * 提取 JSON 数据中的标题、标签、数值数组
+ * 解析失败时返回原始代码块
+ *
+ * @param markdown - 原始 Markdown 文本
+ * @returns 处理后的 Markdown 文本
+ */
 function preprocessChartBlock(markdown: string): string {
   return markdown.replace(
     /```chart\n([\s\S]*?)\n```/g,
